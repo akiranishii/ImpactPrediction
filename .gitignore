@@ -7,3 +7,6 @@ __pycache__/
 
 # If you're using Jupyter Notebooks
 .ipynb_checkpoints/
+
+# Ignore saved models
+models/*

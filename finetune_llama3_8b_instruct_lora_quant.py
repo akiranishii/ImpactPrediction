@@ -25,17 +25,17 @@ class InstructionDataset(Dataset):
         return len(self.data)
 
     def __getitem__(self, idx):
-	example = self.data[idx]
-	messages = example.get("messages", [])
+        example = self.data[idx]
+        messages = example.get("messages", [])
 
-	# Initialize empty strings in case some roles are missing
-	system_prompt = ""
-	instruction_prompt = ""
-	assistant_response = ""
+        # Initialize empty strings in case some roles are missing
+        system_prompt = ""
+        instruction_prompt = ""
+        assistant_response = ""
 
-	# Extract messages by role
-	for msg in messages:
-	    role = msg.get("role", "").lower()
+        # Extract messages by role
+        for msg in messages:
+            role = msg.get("role", "").lower()
             content = msg.get("content", "")
             if role == "system":
                 system_prompt = content
@@ -44,39 +44,24 @@ class InstructionDataset(Dataset):
             elif role == "assistant":
                 assistant_response = content
 
-	# Construct the full prompt.
-	# We label the sections clearly.
-	full_prompt = f"System message: {system_prompt}\nUser instruction: {instruction_prompt}\nAnswer:"
+        # Construct the prompt that will be fed as input.
+        # This clearly indicates which part is the system message and which part is the user instruction.
+        full_prompt = f"System message: {system_prompt}\nUser instruction: {instruction_prompt}\nAnswer:"
 
-	# Append the assistant's response as the target text.
-	full_text = full_prompt + assistant_response
-
-        tokenized = self.tokenizer(
-            full_text,
+        # Use text_target to tokenize the assistant's response as the labels.
+        model_inputs = self.tokenizer(
+            full_prompt,
             truncation=True,
             max_length=self.max_length,
             padding="max_length",
-            return_tensors="pt"
+            return_tensors="pt",
+            text_target=assistant_response  # This tokenizes the assistant response for labels.
         )
-        input_ids = tokenized["input_ids"].squeeze()
-        attention_mask = tokenized["attention_mask"].squeeze()
-
-        with self.tokenizer.as_target_tokenizer():
-            prompt_ids = self.tokenizer(
-                full_prompt,
-                truncation=True,
-                max_length=self.max_length,
-                padding="max_length",
-                return_tensors="pt"
-            )["input_ids"].squeeze()
-        prompt_len = (prompt_ids != self.tokenizer.pad_token_id).sum().item()
-        labels = input_ids.clone()
-        labels[:prompt_len] = -100
 
         return {
-            "input_ids": input_ids,
-            "attention_mask": attention_mask,
-            "labels": labels
+            "input_ids": model_inputs["input_ids"].squeeze(),
+            "attention_mask": model_inputs["attention_mask"].squeeze(),
+            "labels": model_inputs["labels"].squeeze()
         }
 
 def main():
