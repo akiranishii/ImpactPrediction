@@ -39,7 +39,7 @@ def generate_predictions(model, tokenizer, test_file, max_length=512, max_new_to
                     system_prompt = content
                 elif role == "user":
                     instruction_prompt = content
-            prompt = f"System message: {system_prompt}\nUser instruction: {instruction_prompt}\nAnswer:"
+            prompt = f"System message: {system_prompt}\nUser instruction: {instruction_prompt}\n"
             inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=max_length)
             inputs = inputs.to(model.device)
             output_ids = model.generate(**inputs, max_new_tokens=max_new_tokens, pad_token_id=tokenizer.eos_token_id)

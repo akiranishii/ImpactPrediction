@@ -46,8 +46,8 @@ class InstructionDataset(Dataset):
 
         # Construct the prompt that will be fed as input.
         # This clearly indicates which part is the system message and which part is the user instruction.
-        full_prompt = f"System message: {system_prompt}\nUser instruction: {instruction_prompt}\nAnswer:"
-
+#        full_prompt = f"System message: {system_prompt}\nUser instruction: {instruction_prompt}\nAnswer:"
+	full_prompt =  "<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\n{system_prompt}<|eot_id|><|start_header_id|>user<|end_header_id|>\n\n{instruction_prompt}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n"
         # Use text_target to tokenize the assistant's response as the labels.
         model_inputs = self.tokenizer(
             full_prompt,

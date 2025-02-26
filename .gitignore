@@ -10,3 +10,4 @@ __pycache__/
 
 # Ignore saved models
 models/*
+archive_scripts/*
