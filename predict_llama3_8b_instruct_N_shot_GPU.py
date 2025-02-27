@@ -19,7 +19,7 @@ def construct_prompt(messages):
     prompt += "<|start_header_id|>assistant<|end_header_id|>\n"
     return prompt
 
-def process_line(line, tokenizer, model, args):
+def process_line(line, tokenizer, model, args, device):
     """Process a single JSONL entry and return the generated review."""
     entry = json.loads(line)
     paper_id = entry.get("paper_id", "unknown")
@@ -70,23 +70,25 @@ def main(args):
     os.makedirs(os.path.dirname(args.output_path), exist_ok=True)
     
     tokenizer = AutoTokenizer.from_pretrained(args.model_name)
-    model = AutoModelForCausalLM.from_pretrained(args.model_name)
+    model = AutoModelForCausalLM.from_pretrained(args.model_name,
+    load_in_8bit=True,       # Enable 8-bit quantization
+    device_map="auto"        # Automatically map layers to your GPU
+    )
 
     # Move model to GPU if available
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model.to(device)
-    model.half()
+#    model.to(device)
     model.eval()
     
     predictions = []
     with open(args.dataset_path, "r") as infile:
         for line in infile:
             if line.strip():
-                paper_id, response = process_line(line, tokenizer, model, args)
+                paper_id, response = process_line(line, tokenizer, model, args, device)
                 # Each prediction is stored as a JSON object per line.
                 predictions.append({"paper_id": paper_id, "review": response})
                 print(f"Processed paper: {paper_id}")
-	        torch.cuda.empty_cache()
+                torch.cuda.empty_cache()
 
     with open(args.output_path, "w") as outfile:
         for prediction in predictions:
